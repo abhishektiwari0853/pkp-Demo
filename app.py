@@ -150,25 +150,27 @@ if not st.session_state["authenticated"]:
     st.stop()
 
 # -----------------------------
-# 3. DATABASE CONNECTION (DEMO SHEET)
+# 3. DATABASE CONNECTION (SECRETS ONLY – NO FILE)
 # -----------------------------
 @st.cache_resource
 def get_workbook():
     try:
+        # Check secrets exist
+        if "gcp_service_account" not in st.secrets:
+            st.error("❌ Streamlit Secrets not configured. Please add `gcp_service_account` section with your service account JSON keys.")
+            return None
+
         scope = [
             "https://spreadsheets.google.com/feeds",
             "https://www.googleapis.com/auth/drive"
         ]
-        if "gcp_service_account" in st.secrets:
-            creds = ServiceAccountCredentials.from_json_keyfile_dict(
-                dict(st.secrets["gcp_service_account"]), scope
-            )
-        else:
-            creds = ServiceAccountCredentials.from_json_keyfile_name("service_account.json", scope)
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(
+            dict(st.secrets["gcp_service_account"]), scope
+        )
         client = gspread.authorize(creds)
         return client.open_by_key("12yZQukaNvrMOp9PQcJP7X9gER2GOrNo16EWIYTR0qyU")
     except Exception as e:
-        st.error(f"Connection Error: {e}")
+        st.error(f"❌ Connection failed: {e}")
         return None
 
 wb = get_workbook()
