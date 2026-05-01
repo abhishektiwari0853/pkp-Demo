@@ -6,6 +6,7 @@ import pandas as pd
 import traceback
 import io
 from streamlit_option_menu import option_menu
+import json
 
 # -----------------------------
 # 1. CONFIGURATION
@@ -150,23 +151,21 @@ if not st.session_state["authenticated"]:
     st.stop()
 
 # -----------------------------
-# 3. DATABASE CONNECTION (SECRETS ONLY – NO FILE)
+# 3. DATABASE CONNECTION (USING gcp_creds SECRET)
 # -----------------------------
 @st.cache_resource
 def get_workbook():
     try:
-        # Check secrets exist
-        if "gcp_service_account" not in st.secrets:
-            st.error("❌ Streamlit Secrets not configured. Please add `gcp_service_account` section with your service account JSON keys.")
+        if "gcp_creds" not in st.secrets:
+            st.error("❌ Streamlit Secrets missing 'gcp_creds' string.")
             return None
 
+        creds_dict = json.loads(st.secrets["gcp_creds"])
         scope = [
             "https://spreadsheets.google.com/feeds",
             "https://www.googleapis.com/auth/drive"
         ]
-        creds = ServiceAccountCredentials.from_json_keyfile_dict(
-            dict(st.secrets["gcp_service_account"]), scope
-        )
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
         client = gspread.authorize(creds)
         return client.open_by_key("12yZQukaNvrMOp9PQcJP7X9gER2GOrNo16EWIYTR0qyU")
     except Exception as e:
